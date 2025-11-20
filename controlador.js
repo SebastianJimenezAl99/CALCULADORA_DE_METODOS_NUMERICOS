@@ -283,11 +283,12 @@
       }
 
       else if (metodo === "lagrange") {
-        res = lagrange(
-          data.xvals.split(",").map(Number),
-          data.yvals.split(",").map(Number),
-          Number(data.x)
-        );
+        const xs = data.xvals.split(",").map(s => Number(s.trim()));
+        const ys = data.yvals.split(",").map(s => Number(s.trim()));
+        const x = Number(data.x);
+
+        
+        res = lagrange(xs, ys, x);
       }
 
       // ============================
@@ -309,7 +310,7 @@
 
       else {
         texto += "====== RESULTADO ======\n\n";
-        texto += JSON.stringify(res, null, 2);
+        texto += res.toFixed(6); // muestra siempre 6 decimales
       }
 
       output.textContent = texto;
