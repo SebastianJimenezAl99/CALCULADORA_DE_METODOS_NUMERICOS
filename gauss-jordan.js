@@ -1,11 +1,12 @@
 // gauss-jordan.js (versión limpia)
 function gaussJordan(A, b) {
-  if (!Array.isArray(A) || !Array.isArray(b)) return;
+  if (!Array.isArray(A) || !Array.isArray(b)) throw new Error('A y b deben ser arrays');
+  if (A.length === 0 || b.length === 0) throw new Error('A y b no pueden estar vacíos');
   const n = A.length;
-  if (b.length !== n) return;
+  if (b.length !== n) throw new Error('A y b deben tener dimensiones compatibles');
 
   for (let i = 0; i < n; i++) {
-    if (!Array.isArray(A[i]) || A[i].length !== n) return;
+    if (!Array.isArray(A[i]) || A[i].length !== n) throw new Error('A debe ser una matriz cuadrada');
   }
 
   let M = [];
@@ -22,12 +23,12 @@ function gaussJordan(A, b) {
           break;
         }
       }
-      if (filaCambio === -1) return;
+      if (filaCambio === -1) throw new Error('Sistema singular: no tiene solución única');
       [M[i], M[filaCambio]] = [M[filaCambio], M[i]];
     }
 
     let pivote = M[i][i];
-    if (pivote === 0) return;
+    if (pivote === 0) throw new Error('Sistema singular: no tiene solución única');
 
     for (let j = 0; j <= n; j++) {
       M[i][j] /= pivote;

@@ -1,11 +1,19 @@
 
 // Implementación simple de spline cúbico natural (resuelve sistema tridiagonal)
 function interpolacionSpline(xs, ys, x) {
+    if (!Array.isArray(xs) || !Array.isArray(ys)) throw new Error('xs e ys deben ser arrays');
+    if (xs.length < 2 || ys.length < 2) throw new Error('Se necesitan al menos 2 puntos');
+    if (xs.length !== ys.length) throw new Error('xs e ys deben tener la misma longitud');
+    if (typeof x !== 'number' || !isFinite(x)) throw new Error('x debe ser un número finito');
+    
     const n = xs.length;
-    if (n < 2 || ys.length !== n) return 'Error: datos insuficientes';
     // paso 1: construir sistema para las segundas derivadas
     const h = [];
-    for (let i = 0; i < n-1; i++) h.push(xs[i+1] - xs[i]);
+    for (let i = 0; i < n-1; i++) {
+        const hi = xs[i+1] - xs[i];
+        if (hi <= 0) throw new Error('Los valores de x deben estar ordenados y ser únicos');
+        h.push(hi);
+    }
   
     const alpha = [0];
     for (let i = 1; i < n-1; i++) {
@@ -30,13 +38,22 @@ function interpolacionSpline(xs, ys, x) {
       d[j] = (c[j+1]-c[j])/(3*h[j]);
     }
   
-    // localizar intervalo
-    let i = n-2;
-    for (let j = 0; j < n-1; j++){
-      if (x >= xs[j] && x <= xs[j+1]) { i = j; break; }
+    // localizar intervalo usando búsqueda binaria
+    let left = 0, right = n-2, i = n-2;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (x >= xs[mid] && x <= xs[mid+1]) {
+        i = mid;
+        break;
+      } else if (x < xs[mid]) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
     }
     const dx = x - xs[i];
-    const S = ys[i] + b[i]*dx + c[i]*dx*dx + d[i]*dx*dx*dx;
+    const dx2 = dx * dx;
+    const S = ys[i] + b[i]*dx + c[i]*dx2 + d[i]*dx2*dx;
     return S;
   }
   
