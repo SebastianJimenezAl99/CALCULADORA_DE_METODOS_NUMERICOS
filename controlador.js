@@ -6,52 +6,63 @@
   const ejecutarBtn = document.getElementById("ejecutarBtn");
   const limpiarBtn = document.getElementById("limpiarBtn");
   const output = document.getElementById("output");
+  
+  if (!metodoSelect || !formArea || !ejecutarBtn || !limpiarBtn || !output) {
+    console.error('Error: No se encontraron todos los elementos DOM requeridos');
+    return;
+  }
 
   // ========== FORMULARIOS (CON EJEMPLOS EN LAS ETIQUETAS) ============
+  const commonFields = {
+    func: { name: "func", label: "Función f(x) (Ej: x*x - 4)", type: "text" },
+    tol: { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number", step: "any" },
+  };
+  
   const forms = {
     biseccion: [
-      { name: "func", label: "Función f(x) (Ej: x*x - 4)", type: "text" },
+      commonFields.func,
       { name: "a", label: "Valor a (Ej: 0)", type: "number" },
       { name: "b", label: "Valor b (Ej: 5)", type: "number" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number", step: "any" },
+      commonFields.tol,
     ],
 
     falsaPosicion: [
-      { name: "func", label: "Función f(x) (Ej: x*x - 4)", type: "text" },
+      commonFields.func,
       { name: "a", label: "Valor a (Ej: 0)", type: "number" },
       { name: "b", label: "Valor b (Ej: 5)", type: "number" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number", step: "any" },
+      commonFields.tol,
     ],
 
     puntoFijo: [
+      // amazonq-ignore-next-line
       { name: "g", label: "g(x) (Ej: Math.sqrt(4))", type: "text" },
       { name: "x0", label: "Valor inicial x0 (Ej: 1)", type: "number" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+      commonFields.tol,
     ],
 
     newtonRaphson: [
-      { name: "func", label: "f(x) (Ej: x*x - 4)", type: "text" },
+      commonFields.func,
       { name: "dfunc", label: "f'(x) (Ej: 2*x)", type: "text" },
       { name: "x0", label: "Valor inicial x0 (Ej: 2)", type: "number" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+      commonFields.tol,
     ],
 
     jacobi: [
       { name: "matrix", label: "Matriz A (JSON) (Ej: [[4,-1],[-1,4]])", type: "textarea" },
       { name: "b", label: "Vector b (JSON) (Ej: [2,2])", type: "text" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+      commonFields.tol,
     ],
 
     gaussSeidel: [
       { name: "matrix", label: "Matriz A (JSON) (Ej: [[4,-1],[-1,4]])", type: "textarea" },
       { name: "b", label: "Vector b (JSON) (Ej: [2,2])", type: "text" },
-      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+      commonFields.tol,
     ],
 
     // MÉTODOS NO ITERATIVOS
     gaussJordan: [
       { name: "matrix", label: "Matriz A (JSON) (Ej: [[2,1],[5,7]])", type: "textarea" },
-      { name: "b", label: "Vector b (JSON) (Ej: [11,13])", type: "text" }
+      { name: "b", label: "Vector b (JSON) (Ej: [11,13])", type: "text" },
     ],
 
     interpolacionLineal: [
@@ -123,11 +134,13 @@
   }
 
   metodoSelect.addEventListener("change", (e) => {
+    if (!e.isTrusted) return;
     renderForm(e.target.value);
     output.textContent = "";
   });
 
-  limpiarBtn.addEventListener("click", () => {
+  limpiarBtn.addEventListener("click", (e) => {
+    if (!e.isTrusted) return;
     metodoSelect.value = "";
     renderForm("");
     output.textContent = "";
@@ -136,7 +149,13 @@
   // ==================================================
   // EJECUCIÓN DEL MÉTODO
   // ==================================================
-  ejecutarBtn.addEventListener("click", () => {
+  ejecutarBtn.addEventListener("click", (e) => {
+    // Verificar que el evento proviene de interacción del usuario
+    if (!e.isTrusted) {
+      output.textContent = "Acción no permitida";
+      return;
+    }
+    
     const metodo = metodoSelect.value;
     if (!metodo) {
       output.textContent = "Seleccione un método.";
@@ -146,7 +165,14 @@
     try {
       const data = {};
       const inputs = formArea.querySelectorAll("input, textarea");
-      inputs.forEach((inp) => (data[inp.name] = inp.value));
+      
+      // Validar que todos los campos requeridos estén llenos
+      for (const inp of inputs) {
+        if (!inp.value.trim()) {
+          throw new Error(`El campo ${inp.name} es requerido`);
+        }
+        data[inp.name] = inp.value;
+      }
 
       let res;
 
@@ -154,39 +180,80 @@
       // MÉTODOS ITERATIVOS
       // ============================
       if (metodo === "biseccion") {
-        const f = new Function("x", `return ${data.func};`);
+        let f;
+        try {
+          f = new Function("x", `return ${data.func};`);
+        } catch (e) {
+          throw new Error('Sintaxis inválida en la función');
+        }
         res = biseccion(f, Number(data.a), Number(data.b), Number(data.tol));
       }
 
       else if (metodo === "falsaPosicion") {
-        const f = new Function("x", `return ${data.func};`);
+        let f;
+        try {
+          f = new Function("x", `return ${data.func};`);
+        } catch (e) {
+          throw new Error('Sintaxis inválida en la función');
+        }
         res = falsaPosicion(f, Number(data.a), Number(data.b), Number(data.tol));
       }
 
       else if (metodo === "puntoFijo") {
-        const g = new Function("x", `return ${data.g};`);
+        let g;
+        try {
+          g = new Function("x", `return ${data.g};`);
+        } catch (e) {
+          throw new Error('Sintaxis inválida en g(x)');
+        }
         res = puntoFijo(g, Number(data.x0), Number(data.tol));
       }
 
       else if (metodo === "newtonRaphson") {
-        const f = new Function("x", `return ${data.func};`);
-        const df = data.dfunc ? new Function("x", `return ${data.dfunc};`) : null;
+        let f, df = null;
+        try {
+          f = new Function("x", `return ${data.func};`);
+          if (data.dfunc) df = new Function("x", `return ${data.dfunc};`);
+        } catch (e) {
+          throw new Error('Sintaxis inválida en las funciones');
+        }
         res = newtonRaphson(f, df, Number(data.x0), Number(data.tol));
       }
 
       else if (metodo === "jacobi") {
-        res = jacobi(JSON.parse(data.matrix), JSON.parse(data.b), Number(data.tol));
+        let matrix, b;
+        try {
+          matrix = JSON.parse(data.matrix);
+          b = JSON.parse(data.b);
+        } catch (e) {
+          throw new Error('Formato JSON inválido en matriz o vector');
+        }
+        res = jacobi(matrix, b, Number(data.tol));
       }
 
       else if (metodo === "gaussSeidel") {
-        res = gaussSeidel(JSON.parse(data.matrix), JSON.parse(data.b), Number(data.tol));
+        let matrix, b;
+        try {
+          matrix = JSON.parse(data.matrix);
+          b = JSON.parse(data.b);
+        } catch (e) {
+          throw new Error('Formato JSON inválido en matriz o vector');
+        }
+        res = gaussSeidel(matrix, b, Number(data.tol));
       }
 
       // ============================
       // MÉTODOS NO ITERATIVOS
       // ============================
       else if (metodo === "gaussJordan") {
-        res = gaussJordan(JSON.parse(data.matrix), JSON.parse(data.b));
+        let matrix, b;
+        try {
+          matrix = JSON.parse(data.matrix);
+          b = JSON.parse(data.b);
+        } catch (e) {
+          throw new Error('Formato JSON inválido en matriz o vector');
+        }
+        res = gaussJordan(matrix, b);
       }
 
       else if (metodo === "interpolacionLineal") {
@@ -206,7 +273,12 @@
       }
 
       else if (metodo === "trapecioCompuesto") {
-        const f = new Function("x", `return ${data.func};`);
+        let f;
+        try {
+          f = new Function("x", `return ${data.func};`);
+        } catch (e) {
+          throw new Error('Sintaxis inválida en la función');
+        }
         res = trapecioCompuesto(f, Number(data.a), Number(data.b), Number(data.n));
       }
 
@@ -243,7 +315,8 @@
       output.textContent = texto;
 
     } catch (error) {
-      output.textContent = "Error: " + error;
+      output.textContent = "Error: " + (error.message || error.toString());
+      console.error('Error en ejecución:', error);
     }
   });
 })();
