@@ -1,0 +1,250 @@
+// controlador.js FINAL COMPLETO (SOLO AGREGA EJEMPLOS EN LAS ETIQUETAS)
+
+(function () {
+  const metodoSelect = document.getElementById("metodo");
+  const formArea = document.getElementById("formArea");
+  const ejecutarBtn = document.getElementById("ejecutarBtn");
+  const limpiarBtn = document.getElementById("limpiarBtn");
+  const output = document.getElementById("output");
+
+  // ========== FORMULARIOS (CON EJEMPLOS EN LAS ETIQUETAS) ============
+  const forms = {
+    biseccion: [
+      { name: "func", label: "Función f(x) (Ej: x*x - 4)", type: "text" },
+      { name: "a", label: "Valor a (Ej: 0)", type: "number" },
+      { name: "b", label: "Valor b (Ej: 5)", type: "number" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number", step: "any" },
+    ],
+
+    falsaPosicion: [
+      { name: "func", label: "Función f(x) (Ej: x*x - 4)", type: "text" },
+      { name: "a", label: "Valor a (Ej: 0)", type: "number" },
+      { name: "b", label: "Valor b (Ej: 5)", type: "number" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number", step: "any" },
+    ],
+
+    puntoFijo: [
+      { name: "g", label: "g(x) (Ej: Math.sqrt(4))", type: "text" },
+      { name: "x0", label: "Valor inicial x0 (Ej: 1)", type: "number" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+    ],
+
+    newtonRaphson: [
+      { name: "func", label: "f(x) (Ej: x*x - 4)", type: "text" },
+      { name: "dfunc", label: "f'(x) (Ej: 2*x)", type: "text" },
+      { name: "x0", label: "Valor inicial x0 (Ej: 2)", type: "number" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+    ],
+
+    jacobi: [
+      { name: "matrix", label: "Matriz A (JSON) (Ej: [[4,-1],[-1,4]])", type: "textarea" },
+      { name: "b", label: "Vector b (JSON) (Ej: [2,2])", type: "text" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+    ],
+
+    gaussSeidel: [
+      { name: "matrix", label: "Matriz A (JSON) (Ej: [[4,-1],[-1,4]])", type: "textarea" },
+      { name: "b", label: "Vector b (JSON) (Ej: [2,2])", type: "text" },
+      { name: "tol", label: "Tolerancia (Ej: 0.001)", type: "number" },
+    ],
+
+    // MÉTODOS NO ITERATIVOS
+    gaussJordan: [
+      { name: "matrix", label: "Matriz A (JSON) (Ej: [[2,1],[5,7]])", type: "textarea" },
+      { name: "b", label: "Vector b (JSON) (Ej: [11,13])", type: "text" }
+    ],
+
+    interpolacionLineal: [
+      { name: "xvals", label: "Valores x (Ej: 1,2,3)", type: "text" },
+      { name: "yvals", label: "Valores y (Ej: 2,4,6)", type: "text" },
+      { name: "x", label: "x a interpolar (Ej: 2.5)", type: "number" },
+    ],
+
+    interpolacionSpline: [
+      { name: "xvals", label: "Valores x (Ej: 1,2,3)", type: "text" },
+      { name: "yvals", label: "Valores y (Ej: 2,4,6)", type: "text" },
+      { name: "x", label: "x a interpolar (Ej: 2.5)", type: "number" },
+    ],
+
+    trapecioCompuesto: [
+      { name: "func", label: "Función f(x) (Ej: Math.sin(x))", type: "text" },
+      { name: "a", label: "a (Ej: 0)", type: "number" },
+      { name: "b", label: "b (Ej: 3.14)", type: "number" },
+      { name: "n", label: "Subintervalos n (Ej: 4)", type: "number" },
+    ],
+
+    lagrange: [
+      { name: "xvals", label: "Valores x (Ej: 1,2,3)", type: "text" },
+      { name: "yvals", label: "Valores y (Ej: 1,4,9)", type: "text" },
+      { name: "x", label: "x a evaluar (Ej: 2.5)", type: "number" },
+    ],
+  };
+
+  // =======================================================
+
+  function renderForm(method) {
+    formArea.innerHTML = "";
+
+    if (!method || !forms[method]) {
+      formArea.innerHTML = `<p class="hint">Seleccione un método.</p>`;
+      return;
+    }
+
+    const campos = forms[method];
+    const row = document.createElement("div");
+    row.className = "row";
+
+    campos.forEach((c) => {
+      const group = document.createElement("div");
+      group.className = "input-group";
+
+      const label = document.createElement("label");
+      label.textContent = c.label;
+      group.appendChild(label);
+
+      let input;
+
+      if (c.type === "textarea") {
+        input = document.createElement("textarea");
+        input.rows = 3;
+      } else {
+        input = document.createElement("input");
+        input.type = c.type;
+      }
+
+      if (c.step) input.step = c.step;
+      input.name = c.name;
+
+      group.appendChild(input);
+      row.appendChild(group);
+    });
+
+    formArea.appendChild(row);
+  }
+
+  metodoSelect.addEventListener("change", (e) => {
+    renderForm(e.target.value);
+    output.textContent = "";
+  });
+
+  limpiarBtn.addEventListener("click", () => {
+    metodoSelect.value = "";
+    renderForm("");
+    output.textContent = "";
+  });
+
+  // ==================================================
+  // EJECUCIÓN DEL MÉTODO
+  // ==================================================
+  ejecutarBtn.addEventListener("click", () => {
+    const metodo = metodoSelect.value;
+    if (!metodo) {
+      output.textContent = "Seleccione un método.";
+      return;
+    }
+
+    try {
+      const data = {};
+      const inputs = formArea.querySelectorAll("input, textarea");
+      inputs.forEach((inp) => (data[inp.name] = inp.value));
+
+      let res;
+
+      // ============================
+      // MÉTODOS ITERATIVOS
+      // ============================
+      if (metodo === "biseccion") {
+        const f = new Function("x", `return ${data.func};`);
+        res = biseccion(f, Number(data.a), Number(data.b), Number(data.tol));
+      }
+
+      else if (metodo === "falsaPosicion") {
+        const f = new Function("x", `return ${data.func};`);
+        res = falsaPosicion(f, Number(data.a), Number(data.b), Number(data.tol));
+      }
+
+      else if (metodo === "puntoFijo") {
+        const g = new Function("x", `return ${data.g};`);
+        res = puntoFijo(g, Number(data.x0), Number(data.tol));
+      }
+
+      else if (metodo === "newtonRaphson") {
+        const f = new Function("x", `return ${data.func};`);
+        const df = data.dfunc ? new Function("x", `return ${data.dfunc};`) : null;
+        res = newtonRaphson(f, df, Number(data.x0), Number(data.tol));
+      }
+
+      else if (metodo === "jacobi") {
+        res = jacobi(JSON.parse(data.matrix), JSON.parse(data.b), Number(data.tol));
+      }
+
+      else if (metodo === "gaussSeidel") {
+        res = gaussSeidel(JSON.parse(data.matrix), JSON.parse(data.b), Number(data.tol));
+      }
+
+      // ============================
+      // MÉTODOS NO ITERATIVOS
+      // ============================
+      else if (metodo === "gaussJordan") {
+        res = gaussJordan(JSON.parse(data.matrix), JSON.parse(data.b));
+      }
+
+      else if (metodo === "interpolacionLineal") {
+        res = interpolacionLineal(
+          data.xvals.split(",").map(Number),
+          data.yvals.split(",").map(Number),
+          Number(data.x)
+        );
+      }
+
+      else if (metodo === "interpolacionSpline") {
+        res = interpolacionSpline(
+          data.xvals.split(",").map(Number),
+          data.yvals.split(",").map(Number),
+          Number(data.x)
+        );
+      }
+
+      else if (metodo === "trapecioCompuesto") {
+        const f = new Function("x", `return ${data.func};`);
+        res = trapecioCompuesto(f, Number(data.a), Number(data.b), Number(data.n));
+      }
+
+      else if (metodo === "lagrange") {
+        res = lagrange(
+          data.xvals.split(",").map(Number),
+          data.yvals.split(",").map(Number),
+          Number(data.x)
+        );
+      }
+
+      // ============================
+      // MOSTRAR RESULTADO
+      // ============================
+      let texto = "";
+
+      if (typeof res === "object" && res.iteracionesTexto !== undefined) {
+        texto += "====== ITERACIONES ======\n\n";
+        texto += res.iteracionesTexto + "\n";
+
+        texto += "====== RESULTADO FINAL ======\n";
+        texto += JSON.stringify(res.resultado, null, 2) + "\n\n";
+
+        texto += res.convergio
+          ? "✔️ El método convergió correctamente."
+          : "⚠️ No convergió en 10 iteraciones.";
+      }
+
+      else {
+        texto += "====== RESULTADO ======\n\n";
+        texto += JSON.stringify(res, null, 2);
+      }
+
+      output.textContent = texto;
+
+    } catch (error) {
+      output.textContent = "Error: " + error;
+    }
+  });
+})();
+

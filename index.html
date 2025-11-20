@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>CALCULADORA DE MÉTODOS NUMÉRICOS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <header>
+    <h1>CALCULADORA DE MÉTODOS NUMÉRICOS</h1>
+  </header>
+
+  <main class="container">
+    
+    <section class="controls">
+      <label>Método:</label>
+      <select id="metodo">
+        <option value="">Seleccione...</option>
+
+        <!-- ITERATIVOS -->
+        <option value="biseccion">Bisección</option>
+        <option value="falsaPosicion">Falsa Posición</option>
+        <option value="puntoFijo">Punto Fijo</option>
+        <option value="newtonRaphson">Newton Raphson</option>
+        <option value="jacobi">Jacobi</option>
+        <option value="gaussSeidel">Gauss-Seidel</option>
+
+        <!-- NO ITERATIVOS (LOS QUE FALTABAN) -->
+        <option value="gaussJordan">Gauss-Jordan</option>
+        <option value="interpolacionLineal">Interpolación Lineal</option>
+        <option value="interpolacionSpline">Interpolación Spline</option>
+        <option value="trapecioCompuesto">Trapecio Compuesto</option>
+        <option value="lagrange">Interpolación de Lagrange</option>
+      </select>
+    </section>
+
+    <section id="formArea" class="form-area">
+      <p class="hint">Seleccione un método.</p>
+    </section>
+
+    <section class="actions">
+      <button id="ejecutarBtn">Ejecutar</button>
+      <button id="limpiarBtn" class="secondary">Limpiar</button>
+    </section>
+
+    <section class="resultado">
+      <h2>Resultado</h2>
+      <pre id="output"></pre>
+    </section>
+
+  </main>
+
+  <!-- MÉTODOS -->
+  <script src="biseccion.js"></script>
+  <script src="falsa-posicion.js"></script>
+  <script src="punto-fijo.js"></script>
+  <script src="newton-raphson.js"></script>
+  <script src="jacobi.js"></script>
+  <script src="gauss-seidel.js"></script>
+
+  <!-- NO ITERATIVOS -->
+  <script src="gauss-jordan.js"></script>
+  <script src="interpolacion-lineal.js"></script>
+  <script src="interpolacion-spline.js"></script>
+  <script src="trapecio-compuesto.js"></script>
+  <script src="lagrange.js"></script>
+
+  <!-- CONTROLADOR -->
+  <script src="controlador.js"></script>
+</body>
+</html>
+
