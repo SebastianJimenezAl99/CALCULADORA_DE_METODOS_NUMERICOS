@@ -1,3 +1,7 @@
+let chartInstance = null;        // Spline
+let splineChartInstance = null;  // Opcional si quieres Spline separado
+let linealChartInstance = null;  // Interpolación lineal
+let lagrangeChartInstance = null; // Lagrange
 // controlador.js FINAL COMPLETO (SOLO AGREGA EJEMPLOS EN LAS ETIQUETAS)
 
 (function () {
@@ -6,11 +10,53 @@
   const ejecutarBtn = document.getElementById("ejecutarBtn");
   const limpiarBtn = document.getElementById("limpiarBtn");
   const output = document.getElementById("output");
+  const canvas = document.getElementById('grafica');
   
   if (!metodoSelect || !formArea || !ejecutarBtn || !limpiarBtn || !output) {
     console.error('Error: No se encontraron todos los elementos DOM requeridos');
     return;
   }
+
+  /**
+ * Devuelve una función segura para evaluar el spline en cualquier x
+ * @param {Array<number>} xs 
+ * @param {Array<number>} ys 
+ * @returns {function} - función que devuelve interpolación spline en cualquier x dentro del rango
+ */
+function crearFuncionSpline(xs, ys) {
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+
+  return function(x) {
+      // Limitar x al rango de los puntos
+      if (x < minX) x = minX;
+      if (x > maxX) x = maxX;
+      return interpolacionSpline(xs, ys, x);
+  }
+}
+
+  // =================================
+  // FUNCIÓN PARA LIMPIAR LA GRÁFICA
+  // =================================
+  function limpiarGrafica() {
+    if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+    }
+    if (splineChartInstance) {
+        splineChartInstance.destroy();
+        splineChartInstance = null;
+    }
+    if (linealChartInstance) {
+        linealChartInstance.destroy();
+        linealChartInstance = null;
+    }
+    if (lagrangeChartInstance) {
+        lagrangeChartInstance.destroy();
+        lagrangeChartInstance = null;
+    }
+  }
+
 
   // ========== FORMULARIOS (CON EJEMPLOS EN LAS ETIQUETAS) ============
   const commonFields = {
@@ -135,14 +181,16 @@
 
   metodoSelect.addEventListener("change", (e) => {
     if (!e.isTrusted) return;
-    renderForm(e.target.value);
+    renderForm(metodoSelect.value); // o "" al limpiar
+    limpiarGrafica();
     output.textContent = "";
   });
 
   limpiarBtn.addEventListener("click", (e) => {
     if (!e.isTrusted) return;
     metodoSelect.value = "";
-    renderForm("");
+    renderForm(metodoSelect.value); // o "" al limpiar
+    limpiarGrafica();
     output.textContent = "";
   });
 
@@ -151,7 +199,9 @@
   // ==================================================
   ejecutarBtn.addEventListener("click", (e) => {
     // Verificar que el evento proviene de interacción del usuario
+    limpiarGrafica();
     if (!e.isTrusted) {
+      
       output.textContent = "Acción no permitida";
       return;
     }
@@ -256,22 +306,56 @@
         res = gaussJordan(matrix, b);
       }
 
+      // ====== INTERPOLACIÓN LINEAL ======
       else if (metodo === "interpolacionLineal") {
-        res = interpolacionLineal(
-          data.xvals.split(",").map(Number),
-          data.yvals.split(",").map(Number),
-          Number(data.x)
-        );
-      }
+        const xs = data.xvals.split(",").map(s => Number(s.trim()));
+        const ys = data.yvals.split(",").map(s => Number(s.trim()));
+        const x = Number(data.x);
 
-      else if (metodo === "interpolacionSpline") {
-        res = interpolacionSpline(
-          data.xvals.split(",").map(Number),
-          data.yvals.split(",").map(Number),
-          Number(data.x)
-        );
-      }
+         // ✅ Validar que x esté dentro del rango
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        if (x < minX || x > maxX) {
+            output.textContent = `Error: x fuera del rango de los datos (${minX} a ${maxX})`;
+            return; // sale de la función sin intentar interpolar
+        }
 
+        let y;
+        for (let i = 0; i < xs.length - 1; i++) {
+            if (x >= xs[i] && x <= xs[i + 1]) {
+                y = ys[i] + ((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])) * (x - xs[i]);
+                break;
+            }
+        }
+        res = y;
+
+        output.textContent = `P(${x}) = ${res.toFixed(6)}`;
+
+        dibujarGraficaLineal(xs, ys, xi => {
+          for (let i = 0; i < xs.length - 1; i++) {
+              if (xi >= xs[i] && xi <= xs[i + 1]) {
+                  return ys[i] + ((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])) * (xi - xs[i]);
+              }
+          }
+          return null;
+      }, x);
+      
+      }
+    
+    // ====== INTERPOLACIÓN SPLINE ======
+    else if (metodo === "interpolacionSpline") {
+      const xs = data.xvals.split(",").map(s => Number(s.trim()));
+      const ys = data.yvals.split(",").map(s => Number(s.trim()));
+      const x = Number(data.x);
+
+      const splineFunc = crearFuncionSpline(xs, ys); // función segura para evaluar
+      res = splineFunc(x);
+
+      output.textContent = `P(${x}) = ${res.toFixed(6)}`;
+
+      dibujarGraficaSpline(xs, ys, splineFunc, x);
+    }
+    
       else if (metodo === "trapecioCompuesto") {
         let f;
         try {
@@ -282,19 +366,17 @@
         res = trapecioCompuesto(f, Number(data.a), Number(data.b), Number(data.n));
       }
 
-      else if (metodo === "lagrange") {
+      if (metodo === "lagrange") {
         const xs = data.xvals.split(",").map(s => Number(s.trim()));
         const ys = data.yvals.split(",").map(s => Number(s.trim()));
         const x = Number(data.x);
-    
-        // Calcular el valor interpolado
+
         res = lagrange(xs, ys, x);
-    
-        // Dibujar la gráfica
-        dibujarGraficaLagrange(xs, ys, function(xx) {
-          return lagrange(xs, ys, xx);
-      }, x);
-    }
+
+        output.textContent = `P(${x}) = ${res.toFixed(6)}`;
+
+        dibujarGraficaLagrange(xs, ys, xi => lagrange(xs, ys, xi), x);
+      }
     
 
       // ============================

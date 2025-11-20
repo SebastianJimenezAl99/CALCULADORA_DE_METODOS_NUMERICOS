@@ -4,7 +4,6 @@ function interpolacionLineal(xs, ys, x) {
     if (xs.length < 2 || ys.length < 2) throw new Error('Se necesitan al menos 2 puntos');
     if (xs.length !== ys.length) throw new Error('xs e ys deben tener la misma longitud');
     if (typeof x !== 'number' || !isFinite(x)) throw new Error('x debe ser un número finito');
-    
     // buscar segmento
     for (let i = 0; i < xs.length - 1; i++) {
       if ((x >= xs[i] && x <= xs[i+1]) || (x >= xs[i+1] && x <= xs[i])) {
