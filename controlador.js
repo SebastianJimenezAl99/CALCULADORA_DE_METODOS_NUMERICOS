@@ -286,10 +286,16 @@
         const xs = data.xvals.split(",").map(s => Number(s.trim()));
         const ys = data.yvals.split(",").map(s => Number(s.trim()));
         const x = Number(data.x);
-
-        
+    
+        // Calcular el valor interpolado
         res = lagrange(xs, ys, x);
-      }
+    
+        // Dibujar la gráfica
+        dibujarGraficaLagrange(xs, ys, function(xx) {
+          return lagrange(xs, ys, xx);
+      }, x);
+    }
+    
 
       // ============================
       // MOSTRAR RESULTADO
